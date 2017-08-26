@@ -88,15 +88,7 @@ class World():
         self.width = width
         self.height = height
         self.cells = self._fresh_cells()
-        self.cells_changed = self._fresh_cells(state=False)
-
-        # Glider
-        self.cells[0][2] = Cell.ALIVE
-        self.cells[1][2] = Cell.ALIVE
-        self.cells[2][2] = Cell.ALIVE
-        self.cells[2][1] = Cell.ALIVE
-        self.cells[1][0] = Cell.ALIVE
-
+        self.cells_changed = self._fresh_cells(state=True)
 
     def flip_cell(self, x, y):
         if self.cells[y][x] == Cell.ALIVE:
@@ -186,6 +178,8 @@ class MainFrame(tk.Frame):
 
     def create_widgets(self):
         self.toolbar = tk.Frame(self)
+        self.clear_btn = tk.Button(self.toolbar, text='Clear', command=self.clear)
+        self.clear_btn.pack(side=tk.LEFT)
         self.step_btn = tk.Button(self.toolbar, text='Step', command=self.step)
         self.step_btn.pack(side=tk.LEFT)
         self.play_pause_btn = tk.Button(self.toolbar, text='Play',
@@ -220,6 +214,13 @@ class MainFrame(tk.Frame):
         self._paint_world()
         self.generation_lbl['text'] = str(self.generation)
 
+    def clear(self):
+        self.pause()
+        self.generation = 0
+        self.world = World(*self.grid.grid_size)
+        self._paint_world()
+        self.generation_lbl['text'] = str(self.generation)
+
     def _paint_world(self):
         width, height = self.grid.grid_size
         for x in range(0, width):
@@ -231,13 +232,16 @@ class MainFrame(tk.Frame):
         if self.status == Status.PAUSED:
             self.status = Status.PLAYING
             self.stepper.start()
-            btn_text = 'Pause'
-        elif self.status == Status.PLAYING:
+            self.play_pause_btn['text'] = 'Pause'
+        else:
+            self.pause()
+
+    def pause(self):
+        if self.status == Status.PLAYING:
             self.status = Status.PAUSED
             self.stepper.stop()
             self.has_paused = True
-            btn_text = 'Play'
-        self.play_pause_btn['text'] = btn_text
+            self.play_pause_btn['text'] = 'Play'
 
     def set_speed(self, speed_var):
         """Set the speed of the generation stepper. speed_var is a Tk variable
